@@ -1,9 +1,20 @@
-from piano_transcription_inference import PianoTranscription, sample_rate, load_audio
+from piano_transcription_inference import PianoTranscription, sample_rate
+import librosa
 import tempfile
 import os
 
 # 全局变量，只加载一次模型
 _transcriptor = None
+
+def load_audio_safe(audio_path, sr=16000, mono=True):
+    """安全加载音频，兼容不同版本的 librosa"""
+    try:
+        # 尝试使用 piano_transcription_inference 的 load_audio
+        from piano_transcription_inference import load_audio
+        return load_audio(audio_path, sr=sr, mono=mono)
+    except (ImportError, AttributeError):
+        # 降级使用 librosa
+        return librosa.load(audio_path, sr=sr, mono=mono)
 
 def get_transcriptor():
     """获取或创建转录器实例（单例模式）"""
@@ -20,8 +31,8 @@ def transcribe_piano(audio_path: str):
     """
     print(f"Loading audio from {audio_path}")
     
-    # Load audio
-    audio, sr = load_audio(audio_path, sr=sample_rate, mono=True)
+    # 加载音频
+    audio, sr = load_audio_safe(audio_path, sr=sample_rate, mono=True)
     
     print(f"Audio loaded: {len(audio)} samples at {sr}Hz")
     
@@ -31,7 +42,7 @@ def transcribe_piano(audio_path: str):
     # Output MIDI path
     temp_midi = tempfile.NamedTemporaryFile(delete=False, suffix=".mid")
     out_midi_path = temp_midi.name
-    temp_midi.close()  # 关闭文件句柄，让 transcribe 可以写入
+    temp_midi.close()
 
     # Run inference
     print("Running transcription...")
