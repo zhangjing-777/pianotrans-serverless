@@ -1,0 +1,4 @@
+piano_transcription_inference
+librosa
+numpy
+soundfile
